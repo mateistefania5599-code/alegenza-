@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>A Legenda | Panou Securizat Import Feed</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 50px 20px; margin: 0; }
+        .wrapper { max-width: 650px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid #e1e4e8; }
+        h2 { margin-top: 0; color: #1a202c; font-size: 24px; border-bottom: 2px solid #edf2f7; padding-bottom: 15px; }
+        .zone { border: 2px dashed #4299e1; background: #f7fafc; padding: 40px 20px; text-align: center; border-radius: 8px; cursor: pointer; margin: 20px 0; transition: all 0.2s; }
+        .zone:hover { background: #ebf8ff; border-color: #3182ce; }
+        .btn { background: #3182ce; color: white; border: none; padding: 14px; border-radius: 6px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-bottom: 12px; }
+        .btn:hover { background: #2b6cb0; }
+        .btn-danger { background: #e53e3e; }
+        .btn-danger:hover { background: #c53030; }
+        .alert { padding: 15px; border-radius: 6px; font-weight: 600; font-size: 14px; margin-top: 15px; display: none; }
+        .success { background: #c6f6d5; color: #22543d; border: 1px solid #98e6b1; }
+        .lnk { display: block; text-align: center; margin-top: 25px; color: #4a5568; text-decoration: none; font-weight: 500; }
+        .lnk:hover { color: #3182ce; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <h2>🚀 Import Motor de Căutare (2Performant XML)</h2>
+        <p>Trage sau încarcă fișierul XML descărcat de pe linkul tău din 2Performant pentru a actualiza automat ofertele.</p>
+        
+        <div class="zone" id="drop-area">
+            <input type="file" id="file-uploader" accept=".xml" style="display: none;">
+            <p id="file-name">Trage fișierul XML aici sau <strong>apasă pentru selecție</strong></p>
+        </div>
+
+        <button class="btn" onclick="startImport()">Procesează și Încarcă Produsele</button>
+        <button class="btn btn-danger" onclick="wipeData()">Șterge Tot din Baza de Date</button>
+        
+        <div class="alert success" id="status-box"></div>
+
+        <a href="index.html" class="lnk">← Mergi la Pagina Principală (Clienti)</a>
+    </div>
+
+    <script>
+        const dropArea = document.getElementById('drop-area');
+        const fileUploader = document.getElementById('file-uploader');
+        const statusBox = document.getElementById('status-box');
+        let fileToProcess = null;
+
+        dropArea.onclick = () => fileUploader.click();
+        fileUploader.onchange = (e) => {
+            fileToProcess = e.target.files[0];
+            if(fileToProcess) document.getElementById('file-name').innerHTML = `Pregătit pentru procesare: <strong>${fileToProcess.name}</strong>`;
+        };
+
+        function startImport() {
+            if (!fileToProcess) {
+                alert("Te rog să încarci fișierul XML mai întâi!");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const xmlContent = e.target.result;
+                const parsedList = parse2PerformantXML(xmlContent);
+
+                if (parsedList.length > 0) {
+                    localStorage.setItem('alegenda_feed_data', JSON.stringify(parsedList));
+                    statusBox.style.display = 'block';
+                    statusBox.innerText = `Succes complet! Am procesat și publicat ${parsedList.length} produse pe site-ul tău.`;
+                } else {
+                    alert("Eroare la citire. Asigură-te că fișierul conține tag-uri valide tip <item>.");
+                }
+            };
+            reader.readAsText(fileToProcess);
+        }
+
+        function parse2PerformantXML(xmlString) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+            const xmlItems = xmlDoc.getElementsByTagName("item");
+            let results = [];
+
+            for (let i = 0; i < xmlItems.length; i++) {
+                const item = xmlItems[i];
+                
+                // Extragerea primei imagini din listă (imaginile tale sunt separate prin virgulă)
+                let rawImages = item.getElementsByTagName("image_urls")[0]?.textContent || "";
+                let firstImage = rawImages.split(",")[0]?.trim() || "";
+
+                results.push({
+                    title: item.getElementsByTagName("title")[0]?.textContent || "Produs fără titlu",
+                    link: item.getElementsByTagName("aff_code")[0]?.textContent || "#",
+                    price: item.getElementsByTagName("price")[0]?.textContent || "0",
+                    old_price: item.getElementsByTagName("old_price")[0]?.textContent || null,
+                    category: item.getElementsByTagName("category")[0]?.textContent || "General",
+                    id: item.getElementsByTagName("product_id")[0]?.textContent || "N/A",
+                    brand: item.getElementsByTagName("brand")[0]?.textContent || "BagsToDoor",
+                    description: item.getElementsByTagName("description")[0]?.textContent || ""
+                });
+            }
+            return results;
+        }
+
+        function wipeData() {
+            if (confirm("Sigur dorești să ștergi toate produsele din baza de date locală?")) {
+                localStorage.removeItem('alegenda_feed_data');
+                statusBox.style.display = 'block';
+                statusBox.innerText = "Baza de date a fost curățată complet.";
+                document.getElementById('file-name').innerHTML = "Trage fișierul XML aici sau <strong>apasă pentru selecție</strong>";
+                fileToProcess = null;
+            }
+        }
+    </script>
+</body>
+</html>
