@@ -3,28 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Legenda | Site Manual</title>
+    <title>A LEGENDA | Oferte Standard și Industriale</title>
     <link rel="stylesheet" href="stil.css">
 </head>
 <body>
 
     <header>
-        <h1>A Legenda</h1>
-        <p>Site-ul nostru independent, construit complet de la zero.</p>
+        <a href="index.html" class="logo">A Legenda</a>
+        <p>Catalog complet de produse și ambalaje industriale</p>
     </header>
 
-    <main class="zona-principala">
-        <div class="cutie-prezentare">
-            <h2>Bun venit pe pagina mea publică!</h2>
-            <p>Acest spațiu este găzduit gratuit pe GitHub Pages și folosește doar cod scris în Notepad.</p>
-            <button id="butonInteractiune">Apasă pentru detalii</button>
-            <p id="mesajAscuns" class="ascuns">✨ Minunat! Logica JavaScript funcționează perfect!</p>
+    <div class="hero">
+        <h1>Găsește cele mai bune oferte</h1>
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-input" placeholder="Caută produse (ex: saci, flacon, borcan)...">
+            <button onclick="handleSearch()" class="search-btn">Caută</button>
         </div>
-    </main>
+    </div>
 
-    <footer>
-        <p>&copy; 2026 - Creat manual în HTML, CSS și JS</p>
-    </footer>
+    <div class="main-layout">
+        <div class="content-area">
+            <div id="resultsCount" class="results-count">Se încarcă catalogul de produse de la 2Performant...</div>
+            <div id="productsGrid" class="products-grid"></div>
+        </div>
+    </div>
 
     <script src="logica.js"></script>
 </body>

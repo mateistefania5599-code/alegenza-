@@ -1,69 +1,93 @@
-body {
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f8fafc;
-    color: #1e293b;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+let allProducts = [];
+let currentSearch = "";
+
+// Aici este linkul tău de la 2Performant configurat direct în cod
+const xmlUrl = "https://2performant.com";
+// Folosim un serviciu gratuit (proxy) care deblochează securitatea CORS pe GitHub Pages
+const proxyUrl = "https://allorigins.win" + encodeURIComponent(xmlUrl);
+
+document.addEventListener("DOMContentLoaded", () => {
+    incarcaProduse();
+
+    document.getElementById("searchInput").addEventListener("keyup", (e) => {
+        if (e.key === "Enter") handleSearch();
+    });
+});
+
+function incarcaProduse() {
+    fetch(proxyUrl)
+    .then(res => {
+        if (!res.ok) throw new Error("Eroare de rețea");
+        return res.json();
+    })
+    .then(data => {
+        let parser = new DOMParser();
+        let xmlDoc = parser.parseFromString(data.contents, "text/xml");
+        let items = xmlDoc.getElementsByTagName("item");
+        allProducts = [];
+        
+        for (let item of items) {
+            // Extreagem elementele corecte din feed-ul tău XML
+            let title = item.getElementsByTagName("title")[0]?.textContent || '';
+            let price = item.getElementsByTagName("price")[0]?.textContent || '';
+            let old_price = item.getElementsByTagName("old_price")[0]?.textContent || '';
+            let category = item.getElementsByTagName("category")[0]?.textContent || '';
+            let brand = item.getElementsByTagName("brand")[0]?.textContent || '';
+            let aff_code = item.getElementsByTagName("aff_code")[0]?.textContent || '';
+            
+            allProducts.push({ title, price, old_price, category, brand, aff_code });
+        }
+        
+        renderProducts();
+    })
+    .catch(e => {
+        document.getElementById("resultsCount").innerText = "Eroare la încărcarea automată a produselor. Reîncărcați pagina.";
+        console.error(e);
+    });
 }
 
-header {
-    background: linear-gradient(135deg, #0066ff, #0044cc);
-    color: white;
-    text-align: center;
-    padding: 50px 20px;
+function handleSearch() {
+    currentSearch = document.getElementById("searchInput").value.toLowerCase().trim();
+    renderProducts();
 }
 
-.zona-principala {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 30px;
-}
+function renderProducts() {
+    const grid = document.getElementById("productsGrid");
+    
+    const filtered = allProducts.filter(p => {
+        return !currentSearch || p.title.toLowerCase().includes(currentSearch);
+    });
 
-.cutie-prezentare {
-    background: white;
-    padding: 40px;
-    border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-    text-align: center;
-    max-width: 450px;
-    border: 1px solid #e2e8f0;
-}
+    document.getElementById("resultsCount").innerText = `Am găsit ${filtered.length} produse active în catalog`;
 
-button {
-    background-color: #10b981;
-    color: white;
-    border: none;
-    padding: 14px 28px;
-    font-size: 16px;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-top: 15px;
-}
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #64748b;">Niciun produs găsit. Încearcă alte cuvinte cheie.</div>';
+        return;
+    }
 
-button:hover {
-    background-color: #059669;
-    transform: translateY(-2px);
-}
+    grid.innerHTML = filtered.map(p => {
+        let label = "PRODUS";
+        if (p.title.toLowerCase().includes("sac")) label = "SAC MENAJER";
+        if (p.title.toLowerCase().includes("flacon") || p.title.toLowerCase().includes("pet")) label = "RECIPIENT / PET";
+        if (p.title.toLowerCase().includes("borcan")) label = "BORCAN STICLĂ";
+        if (p.title.toLowerCase().includes("pungi")) label = "PUNGI ALIMENTARE";
 
-.ascuns {
-    display: none;
-    color: #10b981;
-    font-weight: bold;
-    margin-top: 20px;
-    font-size: 15px;
-}
-
-footer {
-    text-align: center;
-    padding: 20px;
-    background-color: #0f172a;
-    color: #94a3b8;
-    font-size: 14px;
+        return `
+            <div class="product-card">
+                <div class="image-container">
+                    <div class="image-placeholder">
+                        <span>${label}</span>
+                    </div>
+                </div>
+                <div class="product-info">
+                    <div class="product-brand">${p.brand || 'BagsToDoor'}</div>
+                    <h4 class="product-title" title="${p.title}">${p.title}</h4>
+                    <div class="price-row">
+                        <span class="current-price">${p.price} RON</span>
+                    </div>
+                    <a href="${p.aff_code}" target="_blank" rel="noopener noreferrer" class="view-btn">Vezi Oferta</a>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
