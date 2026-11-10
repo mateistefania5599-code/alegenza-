@@ -1,10 +1,92 @@
-const buton = document.getElementById('butonInteractiune');
-const mesaj = document.getElementById('mesajAscuns');
+let allProducts = [];
+let currentSearch = "";
 
-if (buton && mesaj) {
-    buton.addEventListener('click', function() {
-        mesaj.style.display = 'block';
-        buton.style.backgroundColor = '#64748b';
-        buton.innerText = 'Activat!';
+// Link-ul tău complet de la 2Performant și proxy-ul corect de deblocare
+const xmlUrl = "https://2performant.com";
+const proxyUrl = "https://allorigins.win" + encodeURIComponent(xmlUrl);
+
+document.addEventListener("DOMContentLoaded", () => {
+    incarcaProduse();
+
+    document.getElementById("searchInput").addEventListener("keyup", (e) => {
+        if (e.key === "Enter") handleSearch();
+    });
+});
+
+function incarcaProduse() {
+    fetch(proxyUrl)
+    .then(res => {
+        if (!res.ok) throw new Error("Eroare de rețea");
+        return res.json();
+    })
+    .then(data => {
+        let parser = new DOMParser();
+        let xmlDoc = parser.parseFromString(data.contents, "text/xml");
+        let items = xmlDoc.getElementsByTagName("item");
+        allProducts = [];
+        
+        for (let item of items) {
+            let title = item.getElementsByTagName("title")[0]?.textContent || '';
+            let price = item.getElementsByTagName("price")[0]?.textContent || '';
+            let old_price = item.getElementsByTagName("old_price")[0]?.textContent || '';
+            let category = item.getElementsByTagName("category")[0]?.textContent || '';
+            let brand = item.getElementsByTagName("brand")[0]?.textContent || '';
+            let aff_code = item.getElementsByTagName("aff_code")[0]?.textContent || '';
+            
+            allProducts.push({ title, price, old_price, category, brand, aff_code });
+        }
+        
+        renderProducts();
+    })
+    .catch(e => {
+        document.getElementById("resultsCount").innerText = "Eroare la încărcarea automată a produselor. Reîncărcați pagina.";
+        console.error(e);
     });
 }
+
+function handleSearch() {
+    currentSearch = document.getElementById("searchInput").value.toLowerCase().trim();
+    renderProducts();
+}
+
+function renderProducts() {
+    const grid = document.getElementById("productsGrid");
+    
+    const filtered = allProducts.filter(p => {
+        return !currentSearch || p.title.toLowerCase().includes(currentSearch);
+    });
+
+    document.getElementById("resultsCount").innerText = `Am găsit ${filtered.length} produse active în catalog`;
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #64748b;">Niciun produs găsit. Încearcă alte cuvinte cheie.</div>';
+        return;
+    }
+
+    grid.innerHTML = filtered.map(p => {
+        let label = "PRODUS";
+        if (p.title.toLowerCase().includes("sac")) label = "SAC MENAJER";
+        if (p.title.toLowerCase().includes("flacon") || p.title.toLowerCase().includes("pet")) label = "RECIPIENT / PET";
+        if (p.title.toLowerCase().includes("borcan")) label = "BORCAN STICLĂ";
+        if (p.title.toLowerCase().includes("pungi")) label = "PUNGI ALIMENTARE";
+
+        return `
+            <div class="product-card">
+                <div class="image-container">
+                    <div class="image-placeholder">
+                        <span>${label}</span>
+                    </div>
+                </div>
+                <div class="product-info">
+                    <div class="product-brand">${p.brand || 'BagsToDoor'}</div>
+                    <h4 class="product-title" title="${p.title}">${p.title}</h4>
+                    <div class="price-row">
+                        <span class="current-price">${p.price} RON</span>
+                    </div>
+                    <a href="${p.aff_code}" target="_blank" rel="noopener noreferrer" class="view-btn">Vezi Oferta</a>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
