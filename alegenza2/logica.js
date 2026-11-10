@@ -3,7 +3,7 @@ let activeCategories = new Set();
 let activeBrands = new Set();
 let currentSearch = "";
 
-const xmlUrl = "https://2performant.com";
+const xmlUrl = "https://api.2performant.com/feed/a6516f9de.xml";
 const proxyUrl = "https://allorigins.win" + encodeURIComponent(xmlUrl);
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function incarcaProduse() {
     fetch(proxyUrl)
     .then(res => {
-        if (!res.ok) throw new Error("Eroare de rețea");
+        if (!res.ok) throw new Error("Eroare retea");
         return res.json();
     })
     .then(data => {
@@ -30,12 +30,12 @@ function incarcaProduse() {
         allProducts = [];
         
         for (let item of items) {
-            let title = item.getElementsByTagName("title")[0]?.textContent || item.getElementsByTagName("title")?.textContent || '';
-            let price = item.getElementsByTagName("price")[0]?.textContent || item.getElementsByTagName("price")?.textContent || '';
-            let old_price = item.getElementsByTagName("old_price")[0]?.textContent || '';
-            let category = item.getElementsByTagName("category")[0]?.textContent || '';
-            let brand = item.getElementsByTagName("brand")[0]?.textContent || '';
-            let aff_code = item.getElementsByTagName("aff_code")[0]?.textContent || '';
+            let title = item.getElementsByTagName("title")[0]?.textContent || "";
+            let price = item.getElementsByTagName("price")[0]?.textContent || "";
+            let old_price = item.getElementsByTagName("old_price")[0]?.textContent || "";
+            let category = item.getElementsByTagName("category")[0]?.textContent || "";
+            let brand = item.getElementsByTagName("brand")[0]?.textContent || "";
+            let aff_code = item.getElementsByTagName("aff_code")[0]?.textContent || "";
             
             if (title) {
                 allProducts.push({ title, price, old_price, category, brand, aff_code });
@@ -47,7 +47,7 @@ function incarcaProduse() {
     })
     .catch(e => {
         const resCount = document.getElementById("resultsCount");
-        if (resCount) resCount.innerText = "Eroare la conexiunea cu serverul 2Performant.";
+        if (resCount) resCount.innerText = "Eroare la conexiunea cu serverul 2Performant. Reîncărcați pagina.";
         console.error(e);
     });
 }
@@ -60,8 +60,8 @@ function buildFilters() {
     const brands = [...new Set(allProducts.map(p => p.brand))].filter(Boolean).sort();
 
     if (catContainer) {
-        catContainer.innerHTML = categories.slice(0, 15).map(cat => `
-            <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; cursor:pointer;">
+        catContainer.innerHTML = categories.map(cat => `
+            <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; cursor:pointer; color:#334155;">
                 <input type="checkbox" value="${cat}" onchange="toggleFilter('category', this.value)">
                 <span>${cat}</span>
             </label>
@@ -69,8 +69,8 @@ function buildFilters() {
     }
 
     if (brandContainer) {
-        brandContainer.innerHTML = brands.slice(0, 15).map(b => `
-            <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; cursor:pointer;">
+        brandContainer.innerHTML = brands.map(b => `
+            <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; cursor:pointer; color:#334155;">
                 <input type="checkbox" value="${b}" onchange="toggleFilter('brand', this.value)">
                 <span>${b}</span>
             </label>
@@ -117,20 +117,23 @@ function renderProducts() {
 
     grid.innerHTML = filtered.map(p => {
         let label = "PRODUS";
-        if (p.title.toLowerCase().includes("sac")) label = "SAC MENAJER";
-        if (p.title.toLowerCase().includes("flacon") || p.title.toLowerCase().includes("pet")) label = "RECIPIENT / PET";
-        if (p.title.toLowerCase().includes("borcan")) label = "BORCAN STICLĂ";
-        if (p.title.toLowerCase().includes("pungi")) label = "PUNGI ALIMENTARE";
+        let titleLower = p.title.toLowerCase();
+        if (titleLower.includes("sac")) label = "SAC MENAJER";
+        if (titleLower.includes("flacon") || titleLower.includes("pet") || titleLower.includes("pulverizator") || titleLower.includes("capac")) label = "RECIPIENT / ACCESORIU";
+        if (titleLower.includes("borcan")) label = "BORCAN STICLĂ / PET";
+        if (titleLower.includes("pungi")) label = "PUNGI ALIMENTARE";
+        if (titleLower.includes("folie")) label = "FOLIE STRETCH / CONSTRUCȚII";
 
         return `
-            <div class="product-card" style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:10px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                <div style="background:#e0f2fe; color:#0369a1; padding:20px; text-align:center; border-radius:8px; font-weight:bold; font-size:12px;">
+            <div class="product-card" style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:10px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); box-sizing:border-box;">
+                <div style="background:#e0f2fe; color:#0369a1; padding:30px 10px; text-align:center; border-radius:8px; font-weight:bold; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; line-height:1.3;">
+                    <div style="font-size:20px; margin-bottom:5px;">📦</div>
                     ${label}
                 </div>
-                <div style="font-size:11px; text-transform:uppercase; color:#94a3b8; font-weight:600;">${p.brand || 'BagsToDoor'}</div>
-                <h4 style="font-size:14px; font-weight:600; color:#1e293b; margin:0; line-height:1.4; min-height:40px;">${p.title}</h4>
-                <div style="font-size:18px; font-weight:700; color:#dc2626; margin-top:auto;">${p.price} RON</div>
-                <a href="${p.aff_code}" target="_blank" rel="noopener noreferrer" style="display:block; text-align:center; background:#10b981; color:white; text-decoration:none; padding:10px; border-radius:8px; font-weight:600; font-size:14px; margin-top:10px;">Vezi Oferta</a>
+                <div style="font-size:11px; text-transform:uppercase; color:#94a3b8; font-weight:600; margin-top:5px;">${p.brand || 'BagsToDoor'}</div>
+                <h4 style="font-size:13px; font-weight:600; color:#1e293b; margin:0; line-height:1.4; height:38px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;" title="${p.title}">${p.title}</h4>
+                <div style="font-size:18px; font-weight:700; color:#dc2626; margin-top:auto; padding-top:5px;">${p.price} RON</div>
+                <a href="${p.aff_code}" target="_blank" rel="noopener noreferrer" style="display:block; text-align:center; background:#10b981; color:white; text-decoration:none; padding:10px; border-radius:8px; font-weight:600; font-size:13px; margin-top:5px;">Vezi Oferta</a>
             </div>
         `;
     }).join('');
